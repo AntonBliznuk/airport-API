@@ -1,6 +1,8 @@
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 
+from cloudinary.models import CloudinaryField
+
 
 class AirplaneType(models.Model):
     name = models.CharField(max_length=63, unique=True)
@@ -80,3 +82,32 @@ class Route(models.Model):
         verbose_name = "Route"
         verbose_name_plural = "Routes"
         ordering = ["source", "destination", "distance"]
+
+
+class CrewMemberPosition(models.Model):
+    name = models.CharField(max_length=63, unique=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = "Crew Member Position"
+        verbose_name_plural = "Crew Member Positions"
+        ordering = ["name"]
+
+
+class CrewMember(models.Model):
+    photo = CloudinaryField("image", blank=True, null=True)
+    first_name = models.CharField(max_length=63)
+    last_name = models.CharField(max_length=63)
+    position = models.ForeignKey(
+        CrewMemberPosition, on_delete=models.CASCADE, related_name="crew_members"
+    )
+
+    def __str__(self):
+        return f"{self.first_name} {self.last_name}(Position:{self.position.name})"
+
+    class Meta:
+        verbose_name = "Crew Member"
+        verbose_name_plural = "Crew Members"
+        ordering = ["first_name", "last_name"]
