@@ -1,4 +1,7 @@
+from decimal import Decimal
+
 from django.db import models
+from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
 
 from cloudinary.models import CloudinaryField
@@ -131,3 +134,45 @@ class CrewMember(models.Model):
         verbose_name = "Crew Member"
         verbose_name_plural = "Crew Members"
         ordering = ["first_name", "last_name"]
+
+
+class Flight(models.Model):
+    route = models.ForeignKey(Route, on_delete=models.CASCADE, related_name="flights")
+    airplane = models.ForeignKey(Airplane, on_delete=models.CASCADE, related_name="flights")
+    crew = models.ManyToManyField(CrewMember, related_name="flights")
+    base_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal("0.10"),
+        validators=[
+            MinValueValidator(Decimal("0.01")),
+        ]
+    )
+    departure_time = models.DateTimeField()
+    arrival_time = models.DateTimeField()
+
+    @property
+    def seat_class_multipliers(self) -> dict:
+        return {
+            SeatClass.ECONOMY: settings.ECONOMY_SEAT_CLASS_MULTIPLIER,
+            SeatClass.BUSINESS: settings.BUSINESS_SEAT_CLASS_MULTIPLIER,
+        }
+
+    @property
+    def duration(self):
+        return self.arrival_time - self.departure_time
+
+    def calculate_ticket_price(self, seat_class:str) -> float:
+        multiplier = Decimal(str(self.seat_class_multipliers.get(seat_class, 1.0)))
+        distance = Decimal(str(self.route.distance))
+        price = self.base_price * distance * multiplier
+        return round(float(price), 2)
+
+    def __str__(self):
+        return f"{self.route.source}({self.departure_time}) -> {self.route.destination}({str(self.arrival_time)})"
+
+    class Meta:
+        unique_together = ("airplane", "departure_time")
+        verbose_name = "Flight"
+        verbose_name_plural = "Flights"
+        ordering = ["departure_time"]

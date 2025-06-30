@@ -7,7 +7,8 @@ from airport.models import(
     Airport,
     CrewMemberPosition,
     CrewMember,
-    AirplaneSeatConfiguration
+    AirplaneSeatConfiguration,
+    Flight,
 )
 
 admin.site.register(AirplaneType)
@@ -17,3 +18,4 @@ admin.site.register(Airport)
 admin.site.register(Route)
 admin.site.register(CrewMemberPosition)
 admin.site.register(CrewMember)
+admin.site.register(Flight)
