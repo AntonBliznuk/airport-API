@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 
 class AirplaneType(models.Model):
@@ -15,8 +16,18 @@ class AirplaneType(models.Model):
 
 class Airplane(models.Model):
     name = models.CharField(max_length=63)
-    rows = models.IntegerField()
-    seats_in_row = models.IntegerField()
+    rows = models.IntegerField(
+        validators=[
+            MinValueValidator(1),
+            MaxValueValidator(500)
+        ]
+    )
+    seats_in_row = models.IntegerField(
+        validators=[
+            MinValueValidator(1),
+            MaxValueValidator(500),
+        ]
+    )
     airplane_type = models.ForeignKey(
         AirplaneType, on_delete=models.CASCADE, related_name="airplanes"
     )
@@ -53,7 +64,11 @@ class Route(models.Model):
     destination = models.ForeignKey(
         Airport, on_delete=models.CASCADE, related_name="destinations"
     )
-    distance = models.IntegerField()
+    distance = models.IntegerField(
+        validators=[
+            MinValueValidator(1),
+        ]
+    )
 
     def __str__(self):
         return (
