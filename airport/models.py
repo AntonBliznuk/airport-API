@@ -16,9 +16,16 @@ class AirplaneType(models.Model):
         ordering = ["name"]
 
 
-class Airplane(models.Model):
-    name = models.CharField(max_length=63)
-    image = CloudinaryField("image", blank=True, null=True)
+class SeatClass(models.TextChoices):
+    ECONOMY = "economy", "Economy"
+    BUSINESS = "business", "Business"
+
+
+class AirplaneSeatConfiguration(models.Model):
+    airplane = models.ForeignKey(
+        "Airplane", on_delete=models.CASCADE, related_name="seat_configurations"
+    )
+    seat_class = models.CharField(max_length=10, choices=SeatClass.choices)
     rows = models.IntegerField(
         validators=[
             MinValueValidator(1),
@@ -31,20 +38,31 @@ class Airplane(models.Model):
             MaxValueValidator(500),
         ]
     )
+
+    def __str__(self):
+        return f"name: {self.airplane.name} type:{self.airplane.airplane_type.name} ({self.seat_class})"
+
+    class Meta:
+        unique_together = ("airplane", "seat_class")
+        verbose_name = "Airplane Seat Configuration"
+        verbose_name_plural = "Airplane Seat Configurations"
+        ordering = ["seat_class", "rows", "seats_in_row"]
+
+
+class Airplane(models.Model):
+    name = models.CharField(max_length=63)
+    image = CloudinaryField("image", blank=True, null=True)
     airplane_type = models.ForeignKey(
         AirplaneType, on_delete=models.CASCADE, related_name="airplanes"
     )
 
-    def capacity(self) -> int:
-        return self.rows * self.seats_in_row
-
     def __str__(self):
-        return f"{self.name}(seats:{self.capacity()}, type: {self.airplane_type.name})"
+        return f"{self.name} type: {self.airplane_type.name}"
 
     class Meta:
         verbose_name = "Airplane"
         verbose_name_plural = "Airplanes"
-        ordering = ["name", "rows", "seats_in_row"]
+        ordering = ["name"]
 
 
 class Airport(models.Model):
