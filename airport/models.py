@@ -18,6 +18,7 @@ class AirplaneType(models.Model):
 
 class Airplane(models.Model):
     name = models.CharField(max_length=63)
+    image = CloudinaryField("image", blank=True, null=True)
     rows = models.IntegerField(
         validators=[
             MinValueValidator(1),
@@ -48,6 +49,7 @@ class Airplane(models.Model):
 
 class Airport(models.Model):
     name = models.CharField(max_length=63, unique=True)
+    image = CloudinaryField("image", blank=True, null=True)
     closest_big_city = models.CharField(max_length=63)
 
     def __str__(self):
