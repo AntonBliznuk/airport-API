@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+from django.contrib.auth import get_user_model
 from django.db import models
 from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
@@ -176,3 +177,26 @@ class Flight(models.Model):
         verbose_name = "Flight"
         verbose_name_plural = "Flights"
         ordering = ["departure_time"]
+
+
+class Order(models.Model):
+    is_paid = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name="orders")
+
+    @property
+    def price(self):
+        # you can add additional logic if needed.
+        return
+
+    def pay(self):
+        self.is_paid = True
+
+    def __str__(self):
+        return f"{self.user.username} -> {self.created_at} (is_paid:{self.is_paid})"
+
+    class Meta:
+        verbose_name = "Order"
+        verbose_name_plural = "Orders"
+        ordering = ["created_at", "-is_paid"]
+
