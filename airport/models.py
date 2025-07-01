@@ -170,7 +170,10 @@ class Flight(models.Model):
         return round(float(price), 2)
 
     def __str__(self):
-        return f"{self.route.source}({self.departure_time}) -> {self.route.destination}({str(self.arrival_time)})"
+        return (
+            f"{self.route.source} ({self.departure_time.strftime('%Y-%m-%d %H:%M')}) ->"
+            f" {self.route.destination} ({self.arrival_time.strftime('%Y-%m-%d %H:%M')})"
+        )
 
     class Meta:
         unique_together = ("airplane", "departure_time")
@@ -193,7 +196,7 @@ class Order(models.Model):
         self.is_paid = True
 
     def __str__(self):
-        return f"{self.user.username} -> {self.created_at} (is_paid:{self.is_paid})"
+        return f"{self.user.username} -> {self.created_at.strftime('%Y-%m-%d %H:%M')} (is_paid:{self.is_paid})"
 
     class Meta:
         verbose_name = "Order"
