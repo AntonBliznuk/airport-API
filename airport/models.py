@@ -196,7 +196,7 @@ class Order(models.Model):
         self.is_paid = True
 
     def __str__(self):
-        return f"{self.user.username} -> {self.created_at.strftime('%Y-%m-%d %H:%M')} (is_paid:{self.is_paid})"
+        return f"{self.user.email} -> {self.created_at.strftime('%Y-%m-%d %H:%M')} (is_paid:{self.is_paid})"
 
     class Meta:
         verbose_name = "Order"
