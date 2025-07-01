@@ -1,0 +1,11 @@
+FROM python:3.12-rc-slim-bookworm
+LABEL maintainer="antonbliznuk71@gmail.com"
+
+WORKDIR /app
+
+COPY requirements.dev.txt requirements.dev.txt
+RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.dev.txt
+
+ENV PYTHONUNBUFFERED=1
+
+COPY . .
