@@ -1,0 +1,32 @@
+# ruff.toml
+line-length = 88
+indent-width = 4
+target-version = "py312"
+
+[lint]
+select = [
+  "E",  # pycodestyle
+  "F",  # pyflakes
+  "I",  # isort
+  "UP", # pyupgrade
+  "N",  # pep8-naming
+  "B",  # flake8-bugbear
+  "DJ", # flake8-django
+  "D",  # pydocstyle
+]
+ignore = [
+  "D100", "D101", "D102", "D103", "D104", "D105", "D107", "D212", "D106"
+]
+
+[format]
+quote-style = "double"
+docstring-code-format = true
+
+[isort]
+known-first-party = ["airport", "config", "user"]
+combine-as-imports = true
+
+[lint.per-file-ignores]
+"tests/*" = ["D"]             # ignore docstring checks in tests
+"manage.py" = ["D"]
+"**/migrations/*.py" = ["ALL"]  # fully ignore all migration files
