@@ -1,13 +1,24 @@
 asgiref==3.8.1
+black==25.1.0
 certifi==2025.6.15
 charset-normalizer==3.4.2
+click==8.2.1
 cloudinary==1.44.1
 Django==5.2.3
 django-cloudinary-storage==0.3.0
+django-debug-toolbar==5.2.0
 djangorestframework==3.16.0
 idna==3.10
+mypy_extensions==1.1.0
+packaging==25.0
+pathspec==0.12.1
 pillow==11.2.1
+platformdirs==4.3.8
+psycopg==3.2.1
+# psycopg-binary==3.2.9
 psycopg2-binary
 requests==2.32.4
+six==1.17.0
 sqlparse==0.5.3
+typing_extensions==4.14.0
 urllib3==2.5.0
