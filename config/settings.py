@@ -26,6 +26,8 @@ INSTALLED_APPS = [
     "user",
 ]
 
+# TODO: debug-toolbar
+
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -108,9 +110,14 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-
 AUTH_USER_MODEL = "user.User"
 
+# django-REST-framework settings
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
+    ]
+}
 
 # Cloudinary settings
 DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
@@ -124,3 +131,21 @@ CLOUDINARY_STORAGE = {
 # airport app settings
 BUSINESS_SEAT_CLASS_MULTIPLIER = 2.0
 ECONOMY_SEAT_CLASS_MULTIPLIER = 1.0
+
+# django-debug-toolbar settings
+if DEBUG:
+    import socket
+    INSTALLED_APPS += ["debug_toolbar"]
+    MIDDLEWARE = ["debug_toolbar.middleware.DebugToolbarMiddleware"] + MIDDLEWARE
+
+    INTERNAL_IPS = ["127.0.0.1"]
+
+    try:
+        hostname, _, ips = socket.gethostbyname_ex(socket.gethostname())
+        INTERNAL_IPS += [ip[: ip.rfind(".")] + ".1" for ip in ips]
+    except socket.gaierror:
+        pass
+
+    DEBUG_TOOLBAR_CONFIG = {
+        "SHOW_TOOLBAR_CALLBACK": lambda request: True,
+    }
