@@ -26,7 +26,6 @@ INSTALLED_APPS = [
     "user",
 ]
 
-# TODO: debug-toolbar
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
