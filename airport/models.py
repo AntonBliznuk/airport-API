@@ -200,3 +200,34 @@ class Order(models.Model):
         verbose_name_plural = "Orders"
         ordering = ["created_at", "-is_paid"]
 
+
+class Ticket(models.Model):
+    row = models.IntegerField(
+        validators=[
+            MinValueValidator(1),
+        ]
+    )
+    seat = models.IntegerField(
+        validators=[
+            MinValueValidator(1),
+        ]
+    )
+    seat_class = models.CharField(
+        max_length=10,
+        choices=SeatClass.choices,
+    )
+    flight = models.ForeignKey(
+        Flight, on_delete=models.CASCADE, related_name="tickets"
+    )
+    order = models.ForeignKey(
+        Order, on_delete=models.CASCADE, related_name="tickets"
+    )
+
+    def __str__(self):
+        return f"(row:{self.row}, seat:{self.seat}, seat_class:{self.seat_class}) -> {self.flight.route}"
+
+    class Meta:
+        verbose_name = "Ticket"
+        verbose_name_plural = "Tickets"
+        ordering = ["order__created_at", "order"]
+        unique_together = ("row", "seat", "seat_class", "flight")

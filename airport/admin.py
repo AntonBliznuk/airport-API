@@ -10,6 +10,7 @@ from airport.models import (
     AirplaneSeatConfiguration,
     Flight,
     Order,
+    Ticket,
 )
 
 admin.site.register(AirplaneType)
@@ -21,3 +22,4 @@ admin.site.register(CrewMemberPosition)
 admin.site.register(CrewMember)
 admin.site.register(Flight)
 admin.site.register(Order)
+admin.site.register(Ticket)
