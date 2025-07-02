@@ -54,6 +54,10 @@ class AirplaneSeatConfiguration(models.Model):
             f" type:{self.airplane.airplane_type.name} ({self.seat_class})"
         )
 
+    @property
+    def capacity(self) -> int:
+        return self.rows * self.seats_in_row
+
 
 class Airplane(models.Model):
     name = models.CharField(max_length=63)
