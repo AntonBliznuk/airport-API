@@ -2,14 +2,14 @@ from django.contrib import admin
 
 from airport.models import (
     Airplane,
-    AirplaneType,
-    Route,
-    Airport,
-    CrewMemberPosition,
-    CrewMember,
     AirplaneSeatConfiguration,
+    AirplaneType,
+    Airport,
+    CrewMember,
+    CrewMemberPosition,
     Flight,
     Order,
+    Route,
     Ticket,
 )
 

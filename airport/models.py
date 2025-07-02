@@ -1,23 +1,22 @@
 from decimal import Decimal
 
-from django.contrib.auth import get_user_model
-from django.db import models
-from django.conf import settings
-from django.core.validators import MinValueValidator, MaxValueValidator
-
 from cloudinary.models import CloudinaryField
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db import models
 
 
 class AirplaneType(models.Model):
     name = models.CharField(max_length=63, unique=True)
 
-    def __str__(self):
-        return self.name
-
     class Meta:
         verbose_name = "Airplane Type"
         verbose_name_plural = "Airplane Types"
         ordering = ["name"]
+
+    def __str__(self):
+        return self.name
 
 
 class SeatClass(models.TextChoices):
@@ -43,14 +42,17 @@ class AirplaneSeatConfiguration(models.Model):
         ]
     )
 
-    def __str__(self):
-        return f"name: {self.airplane.name} type:{self.airplane.airplane_type.name} ({self.seat_class})"
-
     class Meta:
         unique_together = ("airplane", "seat_class")
         verbose_name = "Airplane Seat Configuration"
         verbose_name_plural = "Airplane Seat Configurations"
         ordering = ["seat_class", "rows", "seats_in_row"]
+
+    def __str__(self):
+        return (
+            f"name: {self.airplane.name}"
+            f" type:{self.airplane.airplane_type.name} ({self.seat_class})"
+        )
 
 
 class Airplane(models.Model):
@@ -60,13 +62,13 @@ class Airplane(models.Model):
         AirplaneType, on_delete=models.CASCADE, related_name="airplanes"
     )
 
-    def __str__(self):
-        return f"{self.name} type: {self.airplane_type.name}"
-
     class Meta:
         verbose_name = "Airplane"
         verbose_name_plural = "Airplanes"
         ordering = ["name"]
+
+    def __str__(self):
+        return f"{self.name} type: {self.airplane_type.name}"
 
 
 class Airport(models.Model):
@@ -74,13 +76,13 @@ class Airport(models.Model):
     image = CloudinaryField("image", blank=True, null=True)
     closest_big_city = models.CharField(max_length=63)
 
-    def __str__(self):
-        return f"{self.name}(city: {self.closest_big_city})"
-
     class Meta:
         verbose_name = "Airport"
         verbose_name_plural = "Airports"
         ordering = ["name"]
+
+    def __str__(self):
+        return f"{self.name}(city: {self.closest_big_city})"
 
 
 class Route(models.Model):
@@ -96,28 +98,28 @@ class Route(models.Model):
         ]
     )
 
+    class Meta:
+        verbose_name = "Route"
+        verbose_name_plural = "Routes"
+        ordering = ["source", "destination", "distance"]
+
     def __str__(self):
         return (
             f"{self.source.name}({self.source.closest_big_city})"
             f" -> {self.destination.name}({self.destination.closest_big_city})"
         )
 
-    class Meta:
-        verbose_name = "Route"
-        verbose_name_plural = "Routes"
-        ordering = ["source", "destination", "distance"]
-
 
 class CrewMemberPosition(models.Model):
     name = models.CharField(max_length=63, unique=True)
-
-    def __str__(self):
-        return self.name
 
     class Meta:
         verbose_name = "Crew Member Position"
         verbose_name_plural = "Crew Member Positions"
         ordering = ["name"]
+
+    def __str__(self):
+        return self.name
 
 
 class CrewMember(models.Model):
@@ -128,18 +130,22 @@ class CrewMember(models.Model):
         CrewMemberPosition, on_delete=models.CASCADE, related_name="crew_members"
     )
 
-    def __str__(self):
-        return f"{self.first_name} {self.last_name}(Position:{self.position.name})"
-
     class Meta:
         verbose_name = "Crew Member"
         verbose_name_plural = "Crew Members"
         ordering = ["first_name", "last_name"]
 
+    def __str__(self):
+        return f"{self.first_name} {self.last_name}(Position:{self.position.name})"
+
 
 class Flight(models.Model):
-    route = models.ForeignKey(Route, on_delete=models.CASCADE, related_name="flights")
-    airplane = models.ForeignKey(Airplane, on_delete=models.CASCADE, related_name="flights")
+    route = models.ForeignKey(
+        Route, on_delete=models.CASCADE, related_name="flights"
+    )
+    airplane = models.ForeignKey(
+        Airplane, on_delete=models.CASCADE, related_name="flights"
+    )
     crew = models.ManyToManyField(CrewMember, related_name="flights")
     base_price = models.DecimalField(
         max_digits=10,
@@ -151,6 +157,20 @@ class Flight(models.Model):
     )
     departure_time = models.DateTimeField()
     arrival_time = models.DateTimeField()
+
+    class Meta:
+        unique_together = ("airplane", "departure_time")
+        verbose_name = "Flight"
+        verbose_name_plural = "Flights"
+        ordering = ["departure_time"]
+
+    def __str__(self):
+        return (
+            f"{self.route.source} "
+            f"({self.departure_time.strftime('%Y-%m-%d %H:%M')}) ->"
+            f" {self.route.destination} "
+            f"({self.arrival_time.strftime('%Y-%m-%d %H:%M')})"
+        )
 
     @property
     def seat_class_multipliers(self) -> dict:
@@ -169,23 +189,24 @@ class Flight(models.Model):
         price = self.base_price * distance * multiplier
         return round(float(price), 2)
 
-    def __str__(self):
-        return (
-            f"{self.route.source} ({self.departure_time.strftime('%Y-%m-%d %H:%M')}) ->"
-            f" {self.route.destination} ({self.arrival_time.strftime('%Y-%m-%d %H:%M')})"
-        )
-
-    class Meta:
-        unique_together = ("airplane", "departure_time")
-        verbose_name = "Flight"
-        verbose_name_plural = "Flights"
-        ordering = ["departure_time"]
-
 
 class Order(models.Model):
     is_paid = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
-    user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name="orders")
+    user = models.ForeignKey(
+        get_user_model(), on_delete=models.CASCADE, related_name="orders"
+    )
+
+    class Meta:
+        verbose_name = "Order"
+        verbose_name_plural = "Orders"
+        ordering = ["created_at", "-is_paid"]
+
+    def __str__(self):
+        return (
+            f"{self.user.email} -> "
+            f"{self.created_at.strftime('%Y-%m-%d %H:%M')} (is_paid:{self.is_paid})"
+        )
 
     @property
     def price(self):
@@ -194,14 +215,6 @@ class Order(models.Model):
 
     def pay(self):
         self.is_paid = True
-
-    def __str__(self):
-        return f"{self.user.email} -> {self.created_at.strftime('%Y-%m-%d %H:%M')} (is_paid:{self.is_paid})"
-
-    class Meta:
-        verbose_name = "Order"
-        verbose_name_plural = "Orders"
-        ordering = ["created_at", "-is_paid"]
 
 
 class Ticket(models.Model):
@@ -226,11 +239,16 @@ class Ticket(models.Model):
         Order, on_delete=models.CASCADE, related_name="tickets"
     )
 
-    def __str__(self):
-        return f"(row:{self.row}, seat:{self.seat}, seat_class:{self.seat_class}) -> {self.flight.route}"
-
     class Meta:
         verbose_name = "Ticket"
         verbose_name_plural = "Tickets"
         ordering = ["order__created_at", "order"]
         unique_together = ("row", "seat", "seat_class", "flight")
+
+    def __str__(self):
+        return (
+            f"(row:{self.row}, "
+            f"seat:{self.seat}, "
+            f"seat_class:{self.seat_class})"
+            f" -> {self.flight.route}"
+        )
