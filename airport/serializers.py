@@ -98,6 +98,15 @@ class AirplaneListSerializer(AirplaneSerializer):
         return instance
 
 
+class AirplaneImageSerializer(serializers.ModelSerializer):
+    image = serializers.ImageField()
+    class Meta:
+        model = Airplane
+        fields = (
+            "id", "image"
+        )
+
+
 class AirplaneRetrieveSerializer(AirplaneSerializer):
     seat_configurations = AirplaneSeatConfigurationSerializer(many=True)
     airplane_type_id = serializers.PrimaryKeyRelatedField(
