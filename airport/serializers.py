@@ -7,21 +7,14 @@ from airport.models import (
     SeatClass,
 )
 
-
 # ----------- Airplane, AirplaneType, AirplaneSeatConfiguration serializers -----------
-
-class AirplaneTypeSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = AirplaneType
-        fields = ("id", "name")
-
 
 class AirplaneSeatConfigurationSerializer(serializers.ModelSerializer):
     seat_class = serializers.ChoiceField(choices=SeatClass.choices)
 
     class Meta:
         model = AirplaneSeatConfiguration
-        fields = ("seat_class", "rows", "seats_in_row", "capacity")
+        fields = ("id", "seat_class", "rows", "seats_in_row", "capacity")
 
 
 class AirplaneSerializer(serializers.ModelSerializer):
@@ -35,6 +28,11 @@ class AirplaneSerializer(serializers.ModelSerializer):
         many=True, write_only=True
     )
     image = serializers.SerializerMethodField()
+    total_seats = serializers.SerializerMethodField()
+
+    @staticmethod
+    def get_total_seats(obj):
+        return sum([conf.capacity for conf in obj.seat_configurations.all()])
 
     @staticmethod
     def get_image(obj):
@@ -62,12 +60,12 @@ class AirplaneSerializer(serializers.ModelSerializer):
             "image",
             "airplane_type_id",
             "airplane_type_name",
-            "seat_configurations"
+            "total_seats",
+            "seat_configurations",
         )
 
 
 class AirplaneListSerializer(AirplaneSerializer):
-    seats = serializers.SerializerMethodField()
 
     class Meta:
         model = Airplane
@@ -75,20 +73,11 @@ class AirplaneListSerializer(AirplaneSerializer):
             "id",
             "name",
             "image",
-            "airplane_type_name",
-            "seats",
             "airplane_type_id",
-            "seat_configurations"
+            "airplane_type_name",
+            "total_seats",
+            "seat_configurations",
         )
-
-    @staticmethod
-    def get_seats(obj):
-        result = {
-            conf.seat_class: conf.capacity
-            for conf in obj.seat_configurations.all()
-        }
-        result["total"] = sum(result.values())
-        return result
 
     def create(self, validated_data):
         seat_configurations = validated_data.pop("seat_configurations")
@@ -114,6 +103,7 @@ class AirplaneRetrieveSerializer(AirplaneSerializer):
     airplane_type_id = serializers.PrimaryKeyRelatedField(
         queryset=AirplaneType.objects.all()
     )
+
 
     def update(self, instance, validated_data):
         seat_configurations_data = validated_data.pop("seat_configurations", [])
@@ -161,3 +151,23 @@ class AirplaneSeatConfigurationRetrieveSerializer(AirplaneSeatConfigurationSeria
     class Meta:
         model = AirplaneSeatConfiguration
         fields = ("id", "airplane", "seat_class", "rows", "seats_in_row", "capacity")
+
+
+class AirplaneTypeListSerializer(serializers.ModelSerializer):
+    airplanes_total = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = AirplaneType
+        fields = ("id", "name", "airplanes_total")
+
+
+class AirplaneTypeRetrieveSerializer(AirplaneTypeListSerializer):
+    airplane_ids = serializers.PrimaryKeyRelatedField(
+        many=True,
+        read_only=True,
+        source="airplanes",
+    )
+
+    class Meta:
+        model = AirplaneType
+        fields = ("id", "name", "airplanes_total", "airplane_ids")
