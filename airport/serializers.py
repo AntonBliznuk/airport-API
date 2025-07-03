@@ -145,3 +145,17 @@ class AirplaneRetrieveSerializer(AirplaneSerializer):
             )
 
         return instance
+
+
+class AirplaneSeatConfigurationListSerializer(AirplaneSeatConfigurationSerializer):
+    airplane_id = serializers.IntegerField(source="airplane.id")
+    class Meta:
+        model = AirplaneSeatConfiguration
+        fields = ("id", "airplane_id", "seat_class", "rows", "seats_in_row", "capacity")
+
+
+class AirplaneSeatConfigurationRetrieveSerializer(AirplaneSeatConfigurationSerializer):
+    airplane = AirplaneListSerializer(read_only=True)
+    class Meta:
+        model = AirplaneSeatConfiguration
+        fields = ("id", "airplane", "seat_class", "rows", "seats_in_row", "capacity")
