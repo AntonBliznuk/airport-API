@@ -88,7 +88,11 @@ class AirplaneListSerializer(AirplaneSerializer):
 
     def create(self, validated_data):
         seat_configurations = validated_data.pop("seat_configurations")
-        instance = Airplane.objects.create(**validated_data)
+        airplane_type = validated_data.pop("airplane_type_id")
+        instance = Airplane.objects.create(
+            airplane_type=airplane_type,
+            **validated_data
+        )
 
         for conf in seat_configurations:
             AirplaneSeatConfiguration.objects.create(
