@@ -40,6 +40,8 @@ class AirplaneSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def validate_seat_configurations(value):
+        if len(value) < 1:
+            raise serializers.ValidationError("Seat configuration must be provided.")
         seen = set()
         for configuration in value:
             seat_class = configuration.get("seat_class")
