@@ -105,6 +105,7 @@ class Route(models.Model):
     class Meta:
         verbose_name = "Route"
         verbose_name_plural = "Routes"
+        unique_together = ("source", "destination")
         ordering = ["source", "destination", "distance"]
 
     def __str__(self):
