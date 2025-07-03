@@ -4,8 +4,9 @@ from airport.models import (
     Airplane,
     AirplaneSeatConfiguration,
     AirplaneType,
-    SeatClass,
+    CrewMember,
     CrewMemberPosition,
+    SeatClass,
 )
 
 # ----------- Airplane, AirplaneType, AirplaneSeatConfiguration serializers -----------
@@ -199,3 +200,40 @@ class CrewMemberPositionRetrieveSerializer(CrewMemberPositionListSerializer):
     class Meta:
         model = CrewMemberPosition
         fields = ("id", "name", "crew_members_total", "crew_member_ids")
+
+
+class CrewMemberListSerializer(serializers.ModelSerializer):
+    photo = serializers.SerializerMethodField()
+    position_name = serializers.SlugField(
+        source="position.name", read_only=True
+    )
+    position_id = serializers.PrimaryKeyRelatedField(
+        queryset=CrewMemberPosition.objects.all(), source="position"
+    )
+
+    class Meta:
+        model = CrewMember
+        fields = (
+            "id",
+            "photo",
+            "first_name",
+            "last_name",
+            "position_name",
+            "position_id",
+        )
+
+    @staticmethod
+    def get_photo(obj):
+        return str(obj.photo.url) if obj.photo else None
+
+
+class CrewMemberRetrieveSerializer(CrewMemberListSerializer):
+    ...
+
+
+class CrewMemberImageSerializer(serializers.ModelSerializer):
+    photo = serializers.ImageField()
+
+    class Meta:
+        model = CrewMember
+        fields = ("id", "photo")

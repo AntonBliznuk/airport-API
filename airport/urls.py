@@ -6,6 +6,7 @@ from airport.views import (
     AirplaneTypeViewSet,
     AirplaneViewSet,
     CrewMemberPositionViewSet,
+    CrewMemberViewSet,
 )
 
 router = DefaultRouter()
@@ -13,6 +14,7 @@ router.register("airplane-types", AirplaneTypeViewSet)
 router.register("airplanes", AirplaneViewSet)
 router.register("airplane-seat-configurations", AirplaneSeatConfigurationViewSet)
 router.register("crew-member-positions", CrewMemberPositionViewSet)
+router.register("crew-members", CrewMemberViewSet)
 
 app_name = "airport"
 

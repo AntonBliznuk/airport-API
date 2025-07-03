@@ -7,7 +7,9 @@ from rest_framework.response import Response
 from airport.models import (
     Airplane,
     AirplaneSeatConfiguration,
-    AirplaneType, CrewMemberPosition,
+    AirplaneType,
+    CrewMember,
+    CrewMemberPosition,
 )
 from airport.permissions import IsAdminUserOrReadOnly
 from airport.serializers import (
@@ -18,8 +20,11 @@ from airport.serializers import (
     AirplaneSeatConfigurationRetrieveSerializer,
     AirplaneTypeListSerializer,
     AirplaneTypeRetrieveSerializer,
+    CrewMemberImageSerializer,
+    CrewMemberListSerializer,
     CrewMemberPositionListSerializer,
     CrewMemberPositionRetrieveSerializer,
+    CrewMemberRetrieveSerializer,
 )
 
 
@@ -117,3 +122,29 @@ class CrewMemberPositionViewSet(viewsets.ModelViewSet):
                 .annotate(crew_members_total=Count("crew_members"))
             )
         return qs
+
+
+class CrewMemberViewSet(viewsets.ModelViewSet):
+    queryset = CrewMember.objects.select_related("position")
+    permission_classes = [IsAdminUserOrReadOnly]
+
+    def get_serializer_class(self):
+        if self.action in {"retrieve", "update", "partial_update"}:
+            return CrewMemberRetrieveSerializer
+        elif self.action == "upload_image":
+            return CrewMemberImageSerializer
+        return CrewMemberListSerializer
+
+    @action(
+        methods=["POST"],
+        detail=True,
+        permission_classes=[IsAdminUser],
+        url_path="upload-image",
+    )
+    def upload_image(self, request, pk=None):
+        crew_member = self.get_object()
+        serializer = self.get_serializer(crew_member, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
