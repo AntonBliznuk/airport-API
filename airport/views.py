@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from airport.models import (
     Airplane,
     AirplaneSeatConfiguration,
-    AirplaneType,
+    AirplaneType, CrewMemberPosition,
 )
 from airport.permissions import IsAdminUserOrReadOnly
 from airport.serializers import (
@@ -18,6 +18,8 @@ from airport.serializers import (
     AirplaneSeatConfigurationRetrieveSerializer,
     AirplaneTypeListSerializer,
     AirplaneTypeRetrieveSerializer,
+    CrewMemberPositionListSerializer,
+    CrewMemberPositionRetrieveSerializer,
 )
 
 
@@ -89,3 +91,29 @@ class AirplaneViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
+class CrewMemberPositionViewSet(viewsets.ModelViewSet):
+    queryset = CrewMemberPosition.objects.all()
+    permission_classes = [IsAdminUser]
+
+    def get_serializer_class(self):
+        if self.action in {"retrieve", "update", "partial_update"}:
+            return CrewMemberPositionRetrieveSerializer
+        return CrewMemberPositionListSerializer
+
+    def get_queryset(self):
+        qs = self.queryset
+        if self.action == "retrieve":
+            qs = (
+                CrewMemberPosition
+                .objects
+                .prefetch_related("crew_members")
+                .annotate(crew_members_total=Count("crew_members"))
+            )
+        elif self.action == "list":
+            qs = (
+                CrewMemberPosition
+                .objects
+                .annotate(crew_members_total=Count("crew_members"))
+            )
+        return qs

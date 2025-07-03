@@ -5,6 +5,7 @@ from airport.models import (
     AirplaneSeatConfiguration,
     AirplaneType,
     SeatClass,
+    CrewMemberPosition,
 )
 
 # ----------- Airplane, AirplaneType, AirplaneSeatConfiguration serializers -----------
@@ -180,3 +181,21 @@ class AirplaneTypeRetrieveSerializer(AirplaneTypeListSerializer):
     class Meta:
         model = AirplaneType
         fields = ("id", "name", "airplanes_total", "airplane_ids")
+
+
+# ----------- CrewMemberPosition, CrewMember serializers -----------
+
+class CrewMemberPositionListSerializer(serializers.ModelSerializer):
+    crew_members_total = serializers.IntegerField(read_only=True)
+    class Meta:
+        model = CrewMemberPosition
+        fields = ("id", "name", "crew_members_total")
+
+
+class CrewMemberPositionRetrieveSerializer(CrewMemberPositionListSerializer):
+    crew_member_ids = serializers.PrimaryKeyRelatedField(
+        read_only=True, many=True, source="crew_members"
+    )
+    class Meta:
+        model = CrewMemberPosition
+        fields = ("id", "name", "crew_members_total", "crew_member_ids")
