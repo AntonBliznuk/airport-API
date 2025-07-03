@@ -16,7 +16,7 @@ select = [
 ]
 ignore = [
   # Docstring rules to ignore
-  "D100", "D101", "D102", "D103", "D104", "D105", "D106", "D107", "D203"
+  "D100", "D101", "D102", "D103", "D104", "D105", "D106", "D107", "D203", "D200", "D205"
 ]
 
 [lint.isort]
