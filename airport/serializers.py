@@ -8,6 +8,8 @@ from airport.models import (
 )
 
 
+# ----------- Airplane, AirplaneType, AirplaneSeatConfiguration serializers -----------
+
 class AirplaneTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = AirplaneType
