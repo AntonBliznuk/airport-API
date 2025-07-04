@@ -159,6 +159,7 @@ class CrewMemberViewSet(viewsets.ModelViewSet):
 
 class AirportViewSet(viewsets.ModelViewSet):
     queryset = Airport.objects.all()
+    permission_classes = [IsAdminUserOrReadOnly]
 
     def get_serializer_class(self):
         if self.action in {"retrieve", "update", "partial_update"}:
@@ -195,6 +196,7 @@ class AirportViewSet(viewsets.ModelViewSet):
 
 class RouteViewSet(viewsets.ModelViewSet):
     queryset = Route.objects.all()
+    permission_classes = [IsAdminUserOrReadOnly]
 
     def get_serializer_class(self):
         if self.action in {"retrieve", "update", "partial_update"}:
