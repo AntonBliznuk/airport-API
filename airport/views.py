@@ -8,8 +8,10 @@ from airport.models import (
     Airplane,
     AirplaneSeatConfiguration,
     AirplaneType,
+    Airport,
     CrewMember,
     CrewMemberPosition,
+    Route,
 )
 from airport.permissions import IsAdminUserOrReadOnly
 from airport.serializers import (
@@ -20,11 +22,16 @@ from airport.serializers import (
     AirplaneSeatConfigurationRetrieveSerializer,
     AirplaneTypeListSerializer,
     AirplaneTypeRetrieveSerializer,
+    AirportImageSerializer,
+    AirportListSerializer,
+    AirportRetrieveSerializer,
     CrewMemberImageSerializer,
     CrewMemberListSerializer,
     CrewMemberPositionListSerializer,
     CrewMemberPositionRetrieveSerializer,
     CrewMemberRetrieveSerializer,
+    RouteListSerializer,
+    RouteRetrieveSerializer,
 )
 
 
@@ -148,3 +155,56 @@ class CrewMemberViewSet(viewsets.ModelViewSet):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AirportViewSet(viewsets.ModelViewSet):
+    queryset = Airport.objects.all()
+
+    def get_serializer_class(self):
+        if self.action in {"retrieve", "update", "partial_update"}:
+            return AirportRetrieveSerializer
+        elif self.action == "upload_image":
+            return AirportImageSerializer
+        return AirportListSerializer
+
+    def get_queryset(self):
+        qs = (
+            Airport
+            .objects
+            .annotate(source_routes_total=Count("sources"))
+            .annotate(destination_routes_total=Count("destinations"))
+        )
+        if self.action == "retrieve":
+            qs = qs.prefetch_related("sources", "destinations")
+        return qs
+
+    @action(
+        methods=["POST"],
+        detail=True,
+        permission_classes=[IsAdminUser],
+        url_path="upload-image",
+    )
+    def upload_image(self, request, pk=None):
+        airport = self.get_object()
+        serializer = self.get_serializer(airport, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class RouteViewSet(viewsets.ModelViewSet):
+    queryset = Route.objects.all()
+
+    def get_serializer_class(self):
+        if self.action in {"retrieve", "update", "partial_update"}:
+            return RouteRetrieveSerializer
+        return RouteListSerializer
+
+    def get_queryset(self):
+        qs = (
+            Route
+            .objects
+            .select_related("source", "destination")
+        )
+        return qs

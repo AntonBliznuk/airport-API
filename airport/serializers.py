@@ -4,8 +4,10 @@ from airport.models import (
     Airplane,
     AirplaneSeatConfiguration,
     AirplaneType,
+    Airport,
     CrewMember,
     CrewMemberPosition,
+    Route,
     SeatClass,
 )
 
@@ -237,3 +239,123 @@ class CrewMemberImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = CrewMember
         fields = ("id", "photo")
+
+
+# ----------- Airport, Route serializers -----------
+
+class AirportListSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
+    source_routes_total = serializers.IntegerField(read_only=True)
+    destination_routes_total = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = Airport
+        fields = (
+            "id",
+            "name",
+            "image",
+            "closest_big_city",
+            "source_routes_total",
+            "destination_routes_total",
+        )
+
+    @staticmethod
+    def get_image(obj):
+        return str(obj.image.url) if obj.image else None
+
+
+class AirportRetrieveSerializer(AirportListSerializer):
+    source_route_ids = serializers.PrimaryKeyRelatedField(
+        many=True, read_only=True, source="sources"
+    )
+    destination_route_ids = serializers.PrimaryKeyRelatedField(
+        many=True, read_only=True, source="destinations"
+    )
+
+    class Meta:
+        model = Airport
+        fields = (
+            "id",
+            "name",
+            "image",
+            "closest_big_city",
+            "source_routes_total",
+            "source_route_ids",
+            "destination_routes_total",
+            "destination_route_ids",
+        )
+
+
+class AirportImageSerializer(serializers.ModelSerializer):
+    image = serializers.ImageField()
+    class Meta:
+        model = Airport
+        fields = ("id", "image")
+
+
+class RouteListSerializer(serializers.ModelSerializer):
+    source = serializers.SlugField(
+        read_only=True, source="source.closest_big_city"
+    )
+    destination = serializers.SlugField(
+        read_only=True, source="destination.closest_big_city"
+    )
+    source_id = serializers.PrimaryKeyRelatedField(
+        queryset=Airport.objects.all(), write_only=True
+    )
+    destination_id = serializers.PrimaryKeyRelatedField(
+        queryset=Airport.objects.all(), write_only=True
+    )
+    class Meta:
+        model = Route
+        fields = (
+            "id",
+            "source",
+            "destination",
+            "distance",
+            "source_id",
+            "destination_id",
+        )
+
+
+    def validate(self, attrs):
+        super().validate(attrs)
+
+        source_id = attrs.get("source_id")
+        destination_id = attrs.get("destination_id")
+
+        if source_id == destination_id:
+            raise serializers.ValidationError({
+                "source_id": "Must be different from destination_id.",
+                "destination_id": "Must be different from source_id.",
+            })
+        if Route.objects.filter(
+                source_id=source_id, destination_id=destination_id
+        ).exists():
+            raise serializers.ValidationError({
+                "route": "This route already exists."
+            })
+        return attrs
+
+    def create(self, validated_data):
+        source_id = validated_data.pop("source_id")
+        destination_id = validated_data.pop("destination_id")
+        return Route.objects.create(
+            source=source_id, destination=destination_id, **validated_data
+        )
+
+
+class RouteRetrieveSerializer(RouteListSerializer):
+    source = AirportListSerializer(read_only=True)
+    destination = AirportListSerializer(read_only=True)
+
+    def update(self, instance, validated_data):
+        instance.source = validated_data.pop(
+            "source_id", instance.source
+        )
+        instance.destination = validated_data.pop(
+            "destination_id", instance.destination
+        )
+        instance.save()
+
+        return instance
