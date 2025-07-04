@@ -3,6 +3,8 @@ from decimal import Decimal
 from cloudinary.models import CloudinaryField
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.db.models.constraints import UniqueConstraint
+from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
@@ -43,7 +45,11 @@ class AirplaneSeatConfiguration(models.Model):
     )
 
     class Meta:
-        unique_together = ("airplane", "seat_class")
+        constraints = [
+            UniqueConstraint(
+                fields=["airplane", "seat_class"], name="unique_seat_class_per_airplane"
+            )
+        ]
         verbose_name = "Airplane Seat Configuration"
         verbose_name_plural = "Airplane Seat Configurations"
         ordering = ["seat_class", "rows", "seats_in_row"]
@@ -105,7 +111,11 @@ class Route(models.Model):
     class Meta:
         verbose_name = "Route"
         verbose_name_plural = "Routes"
-        unique_together = ("source", "destination")
+        constraints = [
+            UniqueConstraint(
+                fields=["source", "destination"], name="unique_source_destination"
+            )
+        ]
         ordering = ["source", "destination", "distance"]
 
     def __str__(self):
@@ -113,6 +123,14 @@ class Route(models.Model):
             f"{self.source.name}({self.source.closest_big_city})"
             f" -> {self.destination.name}({self.destination.closest_big_city})"
         )
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
+
+    def clean(self):
+        if self.source == self.destination:
+            raise ValidationError("Source and destination must be different.")
 
 
 class CrewMemberPosition(models.Model):
@@ -164,7 +182,12 @@ class Flight(models.Model):
     arrival_time = models.DateTimeField()
 
     class Meta:
-        unique_together = ("airplane", "departure_time")
+        constraints = [
+            UniqueConstraint(
+                fields=["airplane", "departure_time"],
+                name="unique_airplane_departure_time"
+            )
+        ]
         verbose_name = "Flight"
         verbose_name_plural = "Flights"
         ordering = ["departure_time"]
@@ -248,7 +271,12 @@ class Ticket(models.Model):
         verbose_name = "Ticket"
         verbose_name_plural = "Tickets"
         ordering = ["order__created_at", "order"]
-        unique_together = ("row", "seat", "seat_class", "flight")
+        constraints = [
+            UniqueConstraint(
+                fields=["row", "seat", "seat_class", "flight"],
+                name="unique_row_seat_seat_class_flight"
+            )
+        ]
 
     def __str__(self):
         return (
