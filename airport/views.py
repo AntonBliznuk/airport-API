@@ -40,7 +40,7 @@ class AirplaneTypeViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdminUser]
 
     def get_serializer_class(self):
-        if self.action in ("retrieve", "update", "partial_update"):
+        if self.action in {"retrieve", "update", "partial_update"}:
             return AirplaneTypeRetrieveSerializer
         return AirplaneTypeListSerializer
 
@@ -82,7 +82,7 @@ class AirplaneViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdminUserOrReadOnly]
 
     def get_serializer_class(self):
-        if self.action in ["retrieve", "update", "partial_update"]:
+        if self.action in {"retrieve", "update", "partial_update"}:
             return AirplaneRetrieveSerializer
         if self.action == "upload_image":
             return AirplaneImageSerializer
