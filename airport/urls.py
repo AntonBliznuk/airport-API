@@ -9,6 +9,7 @@ from airport.views import (
     CrewMemberPositionViewSet,
     CrewMemberViewSet,
     RouteViewSet,
+    FlightViewSet,
 )
 
 router = DefaultRouter()
@@ -19,6 +20,7 @@ router.register("crew-member-positions", CrewMemberPositionViewSet)
 router.register("crew-members", CrewMemberViewSet)
 router.register("airports", AirportViewSet)
 router.register("routes", RouteViewSet)
+router.register("flights", FlightViewSet)
 
 app_name = "airport"
 

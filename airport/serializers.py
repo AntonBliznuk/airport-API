@@ -8,7 +8,7 @@ from airport.models import (
     CrewMember,
     CrewMemberPosition,
     Route,
-    SeatClass,
+    SeatClass, Flight,
 )
 
 # ----------- Airplane, AirplaneType, AirplaneSeatConfiguration serializers -----------
@@ -357,5 +357,114 @@ class RouteRetrieveSerializer(RouteListSerializer):
             "destination_id", instance.destination
         )
         instance.save()
+
+        return instance
+
+
+# ----------- Flight, Order, Ticket serializers -----------
+
+class FlightListSerializer(serializers.ModelSerializer):
+    route = RouteListSerializer(read_only=True)
+    route_id = serializers.PrimaryKeyRelatedField(
+        write_only=True, queryset=Route.objects.all()
+    )
+    airplane_id = serializers.PrimaryKeyRelatedField(
+        write_only=True, queryset=Airplane.objects.all()
+    )
+    crew_ids = serializers.PrimaryKeyRelatedField(
+        write_only=True, queryset=CrewMember.objects.all(), many=True
+    )
+
+    class Meta:
+        model = Flight
+        fields = (
+            "id",
+            "route_id",
+            "airplane_id",
+            "crew_ids",
+            "base_price",
+            "departure_time",
+            "arrival_time",
+            "route",
+        )
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        flight_id = self.instance.id if self.instance else None
+
+        if flight := Flight.objects.filter(
+                airplane=attrs["airplane_id"],
+                departure_time=attrs["departure_time"]
+        ).exclude(id=flight_id).first():
+            raise serializers.ValidationError({
+                "airplane_id": f"This airplane is already scheduled "
+                               f"for another flight(id:{flight.id}) at this time.",
+            })
+
+        if flight := Flight.objects.filter(
+            crew__in=attrs["crew_ids"],
+            departure_time=attrs["departure_time"]
+        ).exclude(id=flight_id).first():
+            raise serializers.ValidationError({
+                "crew_ids": f"One or more crew members are already "
+                            f"assigned to another flight(id:{flight.id}) at this time.",
+            })
+
+        return attrs
+
+
+    def create(self, validated_data):
+        crew = validated_data.pop("crew_ids")
+        airplane = validated_data.pop("airplane_id")
+        route = validated_data.pop("route_id")
+
+        flight = Flight.objects.create(
+            airplane=airplane,
+            route=route,
+            **validated_data,
+        )
+        flight.crew.set(crew)
+        return flight
+
+
+class FlightRetrieveSerializer(FlightListSerializer):
+    airplane = AirplaneListSerializer(read_only=True)
+    crew = CrewMemberListSerializer(read_only=True, many=True)
+
+    class Meta:
+        model = Flight
+        fields = (
+            "id",
+            "base_price",
+            "departure_time",
+            "arrival_time",
+            "route_id",
+            "route",
+            "airplane_id",
+            "airplane",
+            "crew_ids",
+            "crew",
+        )
+
+    def update(self, instance, validated_data):
+        crew = validated_data.pop("crew_ids")
+        airplane = validated_data.pop("airplane_id")
+        route = validated_data.pop("route_id")
+
+        instance.base_price = validated_data.get(
+            "base_price", instance.base_price
+        )
+        instance.departure_time = validated_data.get(
+            "departure_time", instance.departure_time
+        )
+        instance.arrival_time = validated_data.get(
+            "arrival_time", instance.arrival_time
+        )
+
+        instance.route = route
+        instance.airplane = airplane
+        instance.save()
+
+        instance.crew.set(crew)
 
         return instance

@@ -11,7 +11,7 @@ from airport.models import (
     Airport,
     CrewMember,
     CrewMemberPosition,
-    Route,
+    Route, Flight,
 )
 from airport.permissions import IsAdminUserOrReadOnly
 from airport.serializers import (
@@ -32,6 +32,8 @@ from airport.serializers import (
     CrewMemberRetrieveSerializer,
     RouteListSerializer,
     RouteRetrieveSerializer,
+    FlightListSerializer,
+    FlightRetrieveSerializer,
 )
 
 
@@ -209,4 +211,28 @@ class RouteViewSet(viewsets.ModelViewSet):
             .objects
             .select_related("source", "destination")
         )
+        return qs
+
+
+class FlightViewSet(viewsets.ModelViewSet):
+    queryset = Flight.objects.all()
+    permission_classes = [IsAdminUserOrReadOnly]
+
+    def get_serializer_class(self):
+        if self.action in {"retrieve", "update", "partial_update"}:
+            return FlightRetrieveSerializer
+        return FlightListSerializer
+
+    def get_queryset(self):
+        qs = (Flight.objects
+            .select_related(
+                "route__source",
+                "route__destination",
+                "airplane__airplane_type"
+            ))
+        if self.action == "retrieve":
+            qs = qs.prefetch_related(
+                "crew__position",
+                "airplane__seat_configurations"
+                )
         return qs
