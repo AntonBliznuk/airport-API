@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     "cloudinary_storage",
     "airport",
     "user",
+    "drf_spectacular",
 ]
 
 
@@ -111,6 +112,8 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 AUTH_USER_MODEL = "user.User"
 
+# TODO: JWT authentication
+
 # django-REST-framework settings
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
@@ -118,6 +121,20 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
     'PAGE_SIZE': 15,
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'airport-API',
+    'DESCRIPTION': (
+        "A RESTful API for managing an airport system, including flights, airplanes, "
+        "airports, crew members, routes, ticket bookings, and order processing. "
+        "Users can browse available flights, book tickets, manage orders, and access "
+        "related data. Admins have full control over resource creation and management."
+    ),
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    # OTHER SETTINGS
 }
 
 # Cloudinary settings
