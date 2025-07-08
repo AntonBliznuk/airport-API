@@ -1,3 +1,5 @@
+from datetime import  datetime, timedelta
+
 from django.db.models import Count
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -230,6 +232,20 @@ class FlightViewSet(viewsets.ModelViewSet):
     queryset = Flight.objects.all()
     permission_classes = [IsAdminUserOrReadOnly]
 
+    @staticmethod
+    def _params_to_ints(params):
+        return [int(param) for param in params.split(",")]
+
+    @staticmethod
+    def _string_to_date(departure_day):
+        try:
+            day = datetime.strptime(departure_day, "%Y-%m-%d").date()
+            start_of_day = datetime.combine(day, datetime.min.time())
+            end_of_day = start_of_day + timedelta(days=1)
+            return start_of_day, end_of_day
+        except ValueError:
+            return None
+
     def get_serializer_class(self):
         if self.action in {"retrieve", "update", "partial_update"}:
             return FlightRetrieveSerializer
@@ -242,6 +258,27 @@ class FlightViewSet(viewsets.ModelViewSet):
                 "route__destination",
                 "airplane__airplane_type"
             ))
+
+        airplane_id = self.request.query_params.get("airplane-id", None)
+        if airplane_id:
+            qs = qs.filter(airplane_id=int(airplane_id))
+
+        route_id = self.request.query_params.get("route-id", None)
+        if route_id:
+            qs = qs.filter(route_id=int(route_id))
+
+        crew_ids = self.request.query_params.get("crew-ids", None)
+        if crew_ids:
+            qs = qs.filter(crew__in=self._params_to_ints(crew_ids))
+
+        departure_day = self.request.query_params.get("departure-day", None)
+        if departure_day:
+            start_of_day, end_of_day = self._string_to_date(departure_day)
+            qs = qs.filter(
+                departure_time__gte=start_of_day,
+                departure_time__lt=end_of_day
+            )
+
         if self.action == "retrieve":
             qs = qs.prefetch_related(
                 "crew__position",
