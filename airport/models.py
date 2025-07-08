@@ -32,10 +32,7 @@ class AirplaneSeatConfiguration(models.Model):
     )
     seat_class = models.CharField(max_length=10, choices=SeatClass.choices)
     rows = models.IntegerField(
-        validators=[
-            MinValueValidator(1),
-            MaxValueValidator(500)
-        ]
+        validators=[MinValueValidator(1), MaxValueValidator(500)]
     )
     seats_in_row = models.IntegerField(
         validators=[
@@ -163,9 +160,7 @@ class CrewMember(models.Model):
 
 
 class Flight(models.Model):
-    route = models.ForeignKey(
-        Route, on_delete=models.CASCADE, related_name="flights"
-    )
+    route = models.ForeignKey(Route, on_delete=models.CASCADE, related_name="flights")
     airplane = models.ForeignKey(
         Airplane, on_delete=models.CASCADE, related_name="flights"
     )
@@ -176,7 +171,7 @@ class Flight(models.Model):
         default=Decimal("0.10"),
         validators=[
             MinValueValidator(Decimal("0.01")),
-        ]
+        ],
     )
     departure_time = models.DateTimeField()
     arrival_time = models.DateTimeField()
@@ -185,7 +180,7 @@ class Flight(models.Model):
         constraints = [
             UniqueConstraint(
                 fields=["airplane", "departure_time"],
-                name="unique_airplane_departure_time"
+                name="unique_airplane_departure_time",
             )
         ]
         verbose_name = "Flight"
@@ -218,8 +213,7 @@ class Flight(models.Model):
             f" {self.route.destination.name}({self.route.destination.closest_big_city})"
         )
 
-
-    def calculate_ticket_price(self, seat_class:str) -> float:
+    def calculate_ticket_price(self, seat_class: str) -> float:
         multiplier = Decimal(str(self.seat_class_multipliers.get(seat_class, 1.0)))
         distance = Decimal(str(self.route.distance))
         price = self.base_price * distance * multiplier
@@ -268,12 +262,8 @@ class Ticket(models.Model):
         max_length=10,
         choices=SeatClass.choices,
     )
-    flight = models.ForeignKey(
-        Flight, on_delete=models.CASCADE, related_name="tickets"
-    )
-    order = models.ForeignKey(
-        Order, on_delete=models.CASCADE, related_name="tickets"
-    )
+    flight = models.ForeignKey(Flight, on_delete=models.CASCADE, related_name="tickets")
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="tickets")
 
     class Meta:
         verbose_name = "Ticket"
@@ -282,7 +272,7 @@ class Ticket(models.Model):
         constraints = [
             UniqueConstraint(
                 fields=["row", "seat", "seat_class", "flight"],
-                name="unique_row_seat_seat_class_flight"
+                name="unique_row_seat_seat_class_flight",
             )
         ]
 

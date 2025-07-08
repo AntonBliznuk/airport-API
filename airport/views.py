@@ -1,4 +1,4 @@
-from datetime import  datetime, timedelta
+from datetime import datetime, timedelta
 
 from django.db.models import Count
 from rest_framework import status, viewsets
@@ -79,11 +79,8 @@ class AirplaneTypeViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         qs = self.queryset.all()
         if self.action == "retrieve":
-            qs = (
-                AirplaneType
-                .objects
-                .prefetch_related("airplanes")
-                .annotate(airplanes_total=Count("airplanes"))
+            qs = AirplaneType.objects.prefetch_related("airplanes").annotate(
+                airplanes_total=Count("airplanes")
             )
         elif self.action == "list":
             qs = AirplaneType.objects.annotate(airplanes_total=Count("airplanes"))
@@ -91,11 +88,9 @@ class AirplaneTypeViewSet(viewsets.ModelViewSet):
 
 
 class AirplaneSeatConfigurationViewSet(viewsets.ModelViewSet):
-    queryset = (
-        AirplaneSeatConfiguration
-        .objects.prefetch_related("airplane")
-        .select_related("airplane__airplane_type")
-    )
+    queryset = AirplaneSeatConfiguration.objects.prefetch_related(
+        "airplane"
+    ).select_related("airplane__airplane_type")
     permission_classes = [IsAdminUser]
 
     def get_serializer_class(self):
@@ -105,11 +100,8 @@ class AirplaneSeatConfigurationViewSet(viewsets.ModelViewSet):
 
 
 class AirplaneViewSet(viewsets.ModelViewSet):
-    queryset = (
-        Airplane
-        .objects
-        .select_related("airplane_type")
-        .prefetch_related("seat_configurations")
+    queryset = Airplane.objects.select_related("airplane_type").prefetch_related(
+        "seat_configurations"
     )
     permission_classes = [IsAdminUserOrReadOnly]
 
@@ -148,17 +140,12 @@ class CrewMemberPositionViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         qs = self.queryset
         if self.action == "retrieve":
-            qs = (
-                CrewMemberPosition
-                .objects
-                .prefetch_related("crew_members")
-                .annotate(crew_members_total=Count("crew_members"))
+            qs = CrewMemberPosition.objects.prefetch_related("crew_members").annotate(
+                crew_members_total=Count("crew_members")
             )
         elif self.action == "list":
-            qs = (
-                CrewMemberPosition
-                .objects
-                .annotate(crew_members_total=Count("crew_members"))
+            qs = CrewMemberPosition.objects.annotate(
+                crew_members_total=Count("crew_members")
             )
         return qs
 
@@ -201,11 +188,8 @@ class AirportViewSet(viewsets.ModelViewSet):
         return AirportListSerializer
 
     def get_queryset(self):
-        qs = (
-            Airport
-            .objects
-            .annotate(source_routes_total=Count("sources"))
-            .annotate(destination_routes_total=Count("destinations"))
+        qs = Airport.objects.annotate(source_routes_total=Count("sources")).annotate(
+            destination_routes_total=Count("destinations")
         )
         if self.action == "retrieve":
             qs = qs.prefetch_related("sources", "destinations")
@@ -236,11 +220,7 @@ class RouteViewSet(viewsets.ModelViewSet):
         return RouteListSerializer
 
     def get_queryset(self):
-        qs = (
-            Route
-            .objects
-            .select_related("source", "destination")
-        )
+        qs = Route.objects.select_related("source", "destination")
         return qs
 
 
@@ -254,12 +234,9 @@ class FlightViewSet(viewsets.ModelViewSet, SearchMixin):
         return FlightListSerializer
 
     def get_queryset(self):
-        qs = (Flight.objects
-            .select_related(
-                "route__source",
-                "route__destination",
-                "airplane__airplane_type"
-            ))
+        qs = Flight.objects.select_related(
+            "route__source", "route__destination", "airplane__airplane_type"
+        )
 
         airplane_id = self.request.query_params.get("airplane-id", None)
         if airplane_id:
@@ -277,15 +254,11 @@ class FlightViewSet(viewsets.ModelViewSet, SearchMixin):
         if departure_day:
             start_of_day, end_of_day = self._string_to_date(departure_day)
             qs = qs.filter(
-                departure_time__gte=start_of_day,
-                departure_time__lt=end_of_day
+                departure_time__gte=start_of_day, departure_time__lt=end_of_day
             )
 
         if self.action == "retrieve":
-            qs = qs.prefetch_related(
-                "crew__position",
-                "airplane__seat_configurations"
-                )
+            qs = qs.prefetch_related("crew__position", "airplane__seat_configurations")
         return qs
 
 
@@ -315,16 +288,11 @@ class OrderViewSet(viewsets.ModelViewSet, SearchMixin):
         return OrderListSerializer
 
     def get_queryset(self):
-        qs = (
-            Order
-            .objects
-            .select_related("user")
-            .prefetch_related("tickets__flight__route")
+        qs = Order.objects.select_related("user").prefetch_related(
+            "tickets__flight__route"
         )
         if not self.request.user.is_staff:
-            qs = Order.objects.filter(
-                user=self.request.user
-            )
+            qs = Order.objects.filter(user=self.request.user)
 
         order_day = self.request.query_params.get("order-day", None)
         if order_day:

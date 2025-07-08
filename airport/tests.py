@@ -1,2 +1,1 @@
-
-# Create your tests here.
+# TODO: make fooder for tests (models, views), write tests

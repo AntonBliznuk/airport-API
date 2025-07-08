@@ -1,2 +1,1 @@
-
-# Create your views here.
+# TODO: user views
