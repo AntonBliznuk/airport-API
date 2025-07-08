@@ -3,10 +3,10 @@ from decimal import Decimal
 from cloudinary.models import CloudinaryField
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.db.models.constraints import UniqueConstraint
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from django.db.models.constraints import UniqueConstraint
 
 
 class AirplaneType(models.Model):
@@ -78,7 +78,7 @@ class Airplane(models.Model):
         ordering = ["name"]
 
     def __str__(self):
-        return f"{self.name} type: {self.airplane_type.name}"
+        return f"{self.name} (type: {self.airplane_type.name})"
 
 
 class Airport(models.Model):
@@ -210,6 +210,14 @@ class Flight(models.Model):
     @property
     def duration(self):
         return self.arrival_time - self.departure_time
+
+    @property
+    def str_route(self):
+        return (
+            f"{self.route.source.name}({self.route.source.closest_big_city}) ->"
+            f" {self.route.destination.name}({self.route.destination.closest_big_city})"
+        )
+
 
     def calculate_ticket_price(self, seat_class:str) -> float:
         multiplier = Decimal(str(self.seat_class_multipliers.get(seat_class, 1.0)))
