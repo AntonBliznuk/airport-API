@@ -7,8 +7,11 @@ from airport.models import (
     Airport,
     CrewMember,
     CrewMemberPosition,
+    Flight,
+    Order,
     Route,
-    SeatClass, Flight,
+    SeatClass,
+    Ticket,
 )
 
 # ----------- Airplane, AirplaneType, AirplaneSeatConfiguration serializers -----------
@@ -364,7 +367,7 @@ class RouteRetrieveSerializer(RouteListSerializer):
 # ----------- Flight, Order, Ticket serializers -----------
 
 class FlightListSerializer(serializers.ModelSerializer):
-    route = RouteListSerializer(read_only=True)
+    route = serializers.CharField(read_only=True, source="str_route")
     route_id = serializers.PrimaryKeyRelatedField(
         write_only=True, queryset=Route.objects.all()
     )
@@ -468,3 +471,185 @@ class FlightRetrieveSerializer(FlightListSerializer):
         instance.crew.set(crew)
 
         return instance
+
+
+class TicketSerializer(serializers.ModelSerializer):
+    seat_class = serializers.ChoiceField(choices=SeatClass.choices)
+    flight_id = serializers.PrimaryKeyRelatedField(
+        queryset=Flight.objects.all()
+    )
+    route_string = serializers.CharField(read_only=True, source="flight.str_route")
+    price = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Ticket
+        fields = (
+            "id",
+            "row",
+            "seat",
+            "seat_class",
+            "flight_id",
+            "route_string",
+            "price"
+        )
+
+    @staticmethod
+    def get_price(obj):
+        return obj.flight.calculate_ticket_price(
+            seat_class=obj.seat_class,
+        )
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        ticket_id = self.instance.id if self.instance else None
+
+        flight = attrs.get("flight_id", None)
+        if not flight:
+            raise serializers.ValidationError({
+                "flight_id": "This field is required.",
+            })
+
+        airplane = flight.airplane
+        seat_configuration = airplane.seat_configurations.filter(
+            seat_class=attrs["seat_class"]
+        ).first()
+        if not seat_configuration:
+            raise serializers.ValidationError({
+                "seat_class": f"Airplane of this flight(id:{flight.id})"
+                              f" does not have seat class '{attrs['seat_class']}'."
+            })
+        if seat_configuration.rows < attrs["row"]:
+            raise serializers.ValidationError({
+                "row": f"Airplane of this flight(id:{flight.id}) "
+                       f"does not have row '{attrs['row']}' "
+                       f"(rows: {seat_configuration.rows})."
+            })
+        if seat_configuration.seats_in_row < attrs["seat"]:
+            raise serializers.ValidationError({
+                "seat": f"Airplane of this flight(id:{flight.id}) "
+                        f"does not have seat '{attrs['seat']}' "
+                        f"(seats_in_row: {seat_configuration.seats_in_row})."
+            })
+
+        if Ticket.objects.filter(
+            flight=flight,
+            row=attrs["row"],
+            seat=attrs["seat"],
+            seat_class=attrs["seat_class"],
+        ).exclude(id=ticket_id).exists():
+            raise serializers.ValidationError({
+                "ticket": "This seat is already taken."
+            })
+
+        return attrs
+
+
+class TicketListSerializer(TicketSerializer):
+    owner_email = serializers.CharField(read_only=True, source="order.user.email")
+    flight_id = serializers.IntegerField(read_only=True, source="flight.id")
+
+    class Meta:
+        model = Ticket
+        fields = (
+            "id",
+            "row",
+            "seat",
+            "seat_class",
+            "owner_email",
+            "route_string",
+            "price",
+        )
+
+
+class OrderSerializer(serializers.ModelSerializer):
+    tickets = TicketSerializer(many=True, write_only=True)
+    email = serializers.CharField(read_only=True, source="user.email")
+    order_price = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Order
+        fields = (
+            "id",
+            "is_paid",
+            "created_at",
+            "email",
+            "order_price",
+            "tickets",
+        )
+
+    @staticmethod
+    def get_order_price(obj):
+        return sum([
+            ticket.flight.calculate_ticket_price(ticket.seat_class)
+            for ticket in obj.tickets.all()
+        ])
+
+
+class OrderListSerializer(OrderSerializer):
+
+    def create(self, validated_data):
+        tickets = validated_data.pop("tickets")
+        user = self.context["request"].user
+        instance = Order.objects.create(
+            user=user,
+            **validated_data
+        )
+
+        for ticket in tickets:
+            Ticket.objects.create(
+                row=ticket["row"],
+                seat=ticket["seat"],
+                seat_class=ticket["seat_class"],
+                flight=ticket["flight_id"],
+                order=instance,
+            )
+        instance.save()
+        return instance
+
+    @staticmethod
+    def validate_tickets(value):
+        if len(value) < 1:
+            raise serializers.ValidationError(
+                "This field can not be empty."
+            )
+
+
+class TicketRetrieveSerializer(TicketSerializer):
+    order = OrderListSerializer(read_only=True)
+    flight = FlightListSerializer(read_only=True)
+
+    class Meta:
+        model = Ticket
+        fields = (
+            "id",
+            "row",
+            "seat",
+            "seat_class",
+            "price",
+            "order",
+            "flight",
+        )
+
+
+class OrderRetrieveSerializer(OrderSerializer):
+    tickets = TicketSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Order
+        fields = (
+            "id",
+            "is_paid",
+            "created_at",
+            "email",
+            "order_price",
+            "tickets",
+        )
+
+
+class OrderPaySerializer(OrderSerializer):
+    class Meta:
+        model = Order
+        fields = (
+            "id",
+            "is_paid",
+        )

@@ -8,8 +8,10 @@ from airport.views import (
     AirportViewSet,
     CrewMemberPositionViewSet,
     CrewMemberViewSet,
-    RouteViewSet,
     FlightViewSet,
+    OrderViewSet,
+    RouteViewSet,
+    TicketViewSet,
 )
 
 router = DefaultRouter()
@@ -21,6 +23,8 @@ router.register("crew-members", CrewMemberViewSet)
 router.register("airports", AirportViewSet)
 router.register("routes", RouteViewSet)
 router.register("flights", FlightViewSet)
+router.register("tickets", TicketViewSet)
+router.register("orders", OrderViewSet)
 
 app_name = "airport"
 

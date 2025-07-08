@@ -11,9 +11,16 @@ from airport.models import (
     Airport,
     CrewMember,
     CrewMemberPosition,
-    Route, Flight,
+    Flight,
+    Order,
+    Route,
+    Ticket,
 )
-from airport.permissions import IsAdminUserOrReadOnly
+from airport.permissions import (
+    IsAdminUserOrReadOnly,
+    IsOwner,
+    IsOwnerOrIsAdminOrReadOnly,
+)
 from airport.serializers import (
     AirplaneImageSerializer,
     AirplaneListSerializer,
@@ -30,10 +37,15 @@ from airport.serializers import (
     CrewMemberPositionListSerializer,
     CrewMemberPositionRetrieveSerializer,
     CrewMemberRetrieveSerializer,
-    RouteListSerializer,
-    RouteRetrieveSerializer,
     FlightListSerializer,
     FlightRetrieveSerializer,
+    OrderListSerializer,
+    OrderPaySerializer,
+    OrderRetrieveSerializer,
+    RouteListSerializer,
+    RouteRetrieveSerializer,
+    TicketListSerializer,
+    TicketRetrieveSerializer,
 )
 
 
@@ -236,3 +248,56 @@ class FlightViewSet(viewsets.ModelViewSet):
                 "airplane__seat_configurations"
                 )
         return qs
+
+
+class TicketViewSet(viewsets.ModelViewSet):
+    queryset = Ticket.objects.select_related(
+        "flight__route__source",
+        "flight__route__destination",
+        "order__user",
+    )
+    permission_classes = [IsAdminUser]
+
+    def get_serializer_class(self):
+        if self.action in {"retrieve", "update", "partial_update"}:
+            return TicketRetrieveSerializer
+        return TicketListSerializer
+
+
+class OrderViewSet(viewsets.ModelViewSet):
+    queryset = Order.objects.all()
+    permission_classes = [IsOwnerOrIsAdminOrReadOnly]
+
+    def get_serializer_class(self):
+        if self.action in {"retrieve", "update", "partial_update"}:
+            return OrderRetrieveSerializer
+        if self.action == "pay":
+            return OrderPaySerializer
+        return OrderListSerializer
+
+    def get_queryset(self):
+        qs = (
+            Order
+            .objects
+            .select_related("user")
+            .prefetch_related("tickets__flight__route")
+        )
+        if not self.request.user.is_staff:
+            qs = Order.objects.filter(
+                user=self.request.user
+            )
+        return qs
+
+    @action(
+        methods=["POST"],
+        detail=True,
+        permission_classes=[IsOwner],
+        url_path="pay",
+    )
+    def pay(self, request, pk=None):
+        order = self.get_object()
+        serializer = self.get_serializer(order, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
