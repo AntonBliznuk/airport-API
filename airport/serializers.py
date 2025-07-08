@@ -584,6 +584,14 @@ class OrderSerializer(serializers.ModelSerializer):
             for ticket in obj.tickets.all()
         ])
 
+    @staticmethod
+    def validate_tickets(value):
+        if len(value) < 1:
+            raise serializers.ValidationError(
+                "This field can not be empty."
+            )
+        return value
+
 
 class OrderListSerializer(OrderSerializer):
 
@@ -605,13 +613,6 @@ class OrderListSerializer(OrderSerializer):
             )
         instance.save()
         return instance
-
-    @staticmethod
-    def validate_tickets(value):
-        if len(value) < 1:
-            raise serializers.ValidationError(
-                "This field can not be empty."
-            )
 
 
 class TicketRetrieveSerializer(TicketSerializer):
