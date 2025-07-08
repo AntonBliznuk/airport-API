@@ -50,6 +50,8 @@ from airport.serializers import (
     TicketRetrieveSerializer,
 )
 
+from drf_spectacular.utils import extend_schema, OpenApiParameter
+
 
 class SearchMixin:
     @staticmethod
@@ -261,6 +263,33 @@ class FlightViewSet(viewsets.ModelViewSet, SearchMixin):
             qs = qs.prefetch_related("crew__position", "airplane__seat_configurations")
         return qs
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="airplane_id", type=int, description="Filter by airplane ID"
+            ),
+            OpenApiParameter(
+                name="route_id", type=int, description="Filter by route ID"
+            ),
+            OpenApiParameter(
+                name="crew_ids",
+                type={
+                    "type": "list",
+                    "items": {"type": "integer"}
+                },
+                style="form",
+                explode=False,
+                description="Filter by crew member IDs (comma-separated)",
+            ),
+            OpenApiParameter(
+                name="departure_day", type=str,
+                description="Filter by departure date (YYYY-MM-DD)"
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
 
 class TicketViewSet(viewsets.ModelViewSet):
     queryset = Ticket.objects.select_related(
@@ -313,3 +342,14 @@ class OrderViewSet(viewsets.ModelViewSet, SearchMixin):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="order_day", type=str,
+                description="Filter by order date (YYYY-MM-DD)"
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
