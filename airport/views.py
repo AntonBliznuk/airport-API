@@ -51,6 +51,22 @@ from airport.serializers import (
 )
 
 
+class SearchMixin:
+    @staticmethod
+    def _params_to_ints(params):
+        return [int(param) for param in params.split(",")]
+
+    @staticmethod
+    def _string_to_date(departure_day):
+        try:
+            day = datetime.strptime(departure_day, "%Y-%m-%d").date()
+            start_of_day = datetime.combine(day, datetime.min.time())
+            end_of_day = start_of_day + timedelta(days=1)
+            return start_of_day, end_of_day
+        except ValueError:
+            return None
+
+
 class AirplaneTypeViewSet(viewsets.ModelViewSet):
     queryset = AirplaneType.objects.all()
     permission_classes = [IsAdminUser]
@@ -228,23 +244,9 @@ class RouteViewSet(viewsets.ModelViewSet):
         return qs
 
 
-class FlightViewSet(viewsets.ModelViewSet):
+class FlightViewSet(viewsets.ModelViewSet, SearchMixin):
     queryset = Flight.objects.all()
     permission_classes = [IsAdminUserOrReadOnly]
-
-    @staticmethod
-    def _params_to_ints(params):
-        return [int(param) for param in params.split(",")]
-
-    @staticmethod
-    def _string_to_date(departure_day):
-        try:
-            day = datetime.strptime(departure_day, "%Y-%m-%d").date()
-            start_of_day = datetime.combine(day, datetime.min.time())
-            end_of_day = start_of_day + timedelta(days=1)
-            return start_of_day, end_of_day
-        except ValueError:
-            return None
 
     def get_serializer_class(self):
         if self.action in {"retrieve", "update", "partial_update"}:
@@ -301,7 +303,7 @@ class TicketViewSet(viewsets.ModelViewSet):
         return TicketListSerializer
 
 
-class OrderViewSet(viewsets.ModelViewSet):
+class OrderViewSet(viewsets.ModelViewSet, SearchMixin):
     queryset = Order.objects.all()
     permission_classes = [IsOwnerOrIsAdminOrReadOnly]
 
@@ -323,6 +325,11 @@ class OrderViewSet(viewsets.ModelViewSet):
             qs = Order.objects.filter(
                 user=self.request.user
             )
+
+        order_day = self.request.query_params.get("order-day", None)
+        if order_day:
+            start_of_day, end_of_day = self._string_to_date(order_day)
+            qs = qs.filter(created_at__gte=start_of_day, created_at__lt=end_of_day)
         return qs
 
     @action(
