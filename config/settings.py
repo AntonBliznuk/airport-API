@@ -1,4 +1,5 @@
 import os
+import sys
 from pathlib import Path
 from datetime import timedelta
 
@@ -164,7 +165,8 @@ BUSINESS_SEAT_CLASS_MULTIPLIER = 2.0
 ECONOMY_SEAT_CLASS_MULTIPLIER = 1.0
 
 # django-debug-toolbar settings
-if DEBUG:
+IS_TESTING = "test" in sys.argv
+if DEBUG and not IS_TESTING:
     import socket
 
     INSTALLED_APPS += ["debug_toolbar"]
