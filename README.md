@@ -44,7 +44,8 @@ cd airport-API
 cp .env.example .env
 ```
 ✏️ Modify .env with your own credentials (especially SECRET_KEY and Cloudinary config).
-3.	Build the dev container:
+
+3. Build the dev container:
 ```bash
 docker-compose -f docker-compose.dev.yml build
 ```
