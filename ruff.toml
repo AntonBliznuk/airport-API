@@ -1,0 +1,33 @@
+# ruff.toml — Configuration for Ruff linter and formatter
+line-length = 88
+indent-width = 4
+target-version = "py312"
+
+[lint]
+select = [
+  "B",   # flake8-bugbear
+  "D",   # pydocstyle
+  "DJ",  # flake8-django
+  "E",   # pycodestyle
+  "F",   # pyflakes
+  "I",   # isort
+  "N",   # pep8-naming
+  "UP",  # pyupgrade
+]
+ignore = [
+  # Docstring rules to ignore
+  "D100", "D101", "D102", "D103", "D104", "D105", "D106", "D107", "D203", "D200", "D205"
+]
+
+[lint.isort]
+known-first-party = ["airport", "config", "user"]
+combine-as-imports = true
+
+[format]
+quote-style = "double"
+docstring-code-format = true
+
+[lint.per-file-ignores]
+"tests/*" = ["D"]                # Ignore docstring rules in test files
+"manage.py" = ["D"]
+"**/migrations/*.py" = ["ALL"]   # Ignore all linting in migrations

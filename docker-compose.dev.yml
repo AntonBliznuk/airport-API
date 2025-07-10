@@ -1,0 +1,28 @@
+services:
+  airport-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "8000:8000"
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+    env_file:
+      - .env
+    restart: always
+    volumes:
+      - ./:/app
+
+  db:
+    image: postgres:15.13-bookworm
+    restart: always
+    ports:
+      - "5432:5432"
+    env_file:
+      - .env
+    volumes:
+      - my_db:$PGDATA
+
+volumes:
+  my_db:

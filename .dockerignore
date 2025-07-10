@@ -1,0 +1,60 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.pyo
+*.pdb
+
+# Virtualenv
+venv/
+env/
+ENV/
+
+# Git
+.git/
+.gitignore
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+.dockerignore
+Dockerfile
+docker-compose*.yml
+
+# Tests
+.coverage
+htmlcov/
+*.log
+*.pytest_cache/
+.tox/
+
+# IDEs and editors
+.idea/
+.vscode/
+*.swp
+*~.nib
+*.bak
+
+# Media & static (optional if handled separately)
+media/
+staticfiles/
+
+# Node stuff (if using frontend)
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# Compiled assets
+*.db
+*.sqlite3
+
+# Environment
+.env
+.env.*
+
+DB-structure-diagram.drawio
