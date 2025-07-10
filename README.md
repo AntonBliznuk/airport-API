@@ -61,3 +61,7 @@ Swagger UI: http://0.0.0.0:8000/api/doc/swagger/
 
 Redoc: http://0.0.0.0:8000/api/doc/redoc/
 
+### Admin user: 
+email: admin@admin.com
+
+password: admin
